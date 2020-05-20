@@ -9,13 +9,16 @@ function transform(root) {
   recast.traverse(root, {
     ElementNode(node) {
       // modifier (param)
-      if (node.attributes.length) {
-        for (let attr of node.attributes) {
-          if (attr.value && attr.value.path.original === 'action') {
-            attr.value.path = b.path('fn');
+      node.attributes = node.attributes.map(attr => {
+        if (attr.value && attr.value.path && attr.value.path.original === 'action') {
+          const params = attr.value.params;
+          if (params.length && params[0].type === 'StringLiteral' && params[0].value !== 'click') {
+            params[0] = b.path(`this.${params[0].original}`);
           }
+          attr.value.path = b.path('fn');
         }
-      }
+        return attr;
+      });
       // action handler
       node.modifiers = node.modifiers.map(mod => {
         if (mod.path && mod.path.original === 'action') {
