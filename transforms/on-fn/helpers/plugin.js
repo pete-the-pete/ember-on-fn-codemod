@@ -8,24 +8,31 @@ function transform(root) {
 
   recast.traverse(root, {
     ElementNode(node) {
-      if (node.attributes) {
+      // modifier (param)
+      if (node.attributes.length) {
         for (let attr of node.attributes) {
           if (attr.value && attr.value.path.original === 'action') {
             attr.value.path = b.path('fn');
           }
         }
       }
-    },
-
-    ElementModifierStatement(node) {
-      if (node.path.original === 'action') {
-        node.path = b.path('on');
-        const params = node.params;
-        if (params && params[0].type === 'StringLiteral') {
-          params[0] = b.path(`this.${params[0].original}`);
+      // action handler
+      node.modifiers = node.modifiers.map(mod => {
+        if (mod.path && mod.path.original === 'action') {
+          const params = mod.params;
+          const hash = mod.hash;
+          let domEventName = 'click';
+          // TODO: this should be look through the list first
+          if (hash.pairs.length && hash.pairs[0].key === 'on') {
+            domEventName = hash.pairs[0].value.original;
+          }
+          if (params.length && params[0].type === 'StringLiteral' && params[0].value !== 'click') {
+            params[0] = b.path(`this.${params[0].original}`);
+          }
+          mod = b.elementModifier(b.path('on'), [b.string(domEventName)].concat(...params));
         }
-        node.params = [b.string('click'), ...params];
-      }
+        return mod;
+      });
     },
   });
 }
