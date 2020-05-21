@@ -37,13 +37,12 @@ function transform(root) {
         if (attr.value && attr.value.path && attr.value.path.original === 'action') {
           const params = attr.value.params;
           convertStringHandler(params);
-          let domEventName = domEvents.filter(e => node.attributes[0].name.includes(e)).pop();
+          let domEventName = domEvents.filter(e => attr.name.includes(e.toLowerCase())).pop();
           if (domEventName) {
             node.modifiers.push(
-              b.elementModifier(b.path('on'), [b.string(domEventName)].concat(...params))
+              b.elementModifier(b.path('on'), [b.string(domEventName.substr(2))].concat(...params))
             );
-            attributes.slice(index, 1);
-            attributes.length--;
+            attributes.splice(index, 1);
           } else {
             attr.value.path = b.path('fn');
           }
