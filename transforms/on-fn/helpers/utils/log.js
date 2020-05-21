@@ -7,5 +7,10 @@ const logFormatter = printf(info => {
 
 module.exports = createLogger({
   format: combine(timestamp(), logFormatter),
-  transports: [new transports.File({ filename: 'codemods.log' })],
+  transports: [
+    new transports.Console({
+      handleExceptions: true,
+    }),
+    new transports.File({ filename: 'codemods.log' }),
+  ],
 });

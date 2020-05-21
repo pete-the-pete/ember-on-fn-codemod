@@ -18,7 +18,7 @@ module.exports = function transformer(file /*, api */) {
   let root = recast.parse(file.source);
 
   debug('Transforming %s ...', file.path);
-  transform(root);
+  transform(root, file);
 
   debug('Generating new content for %s ...', file.path);
   return recast.print(root);
