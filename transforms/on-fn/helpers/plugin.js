@@ -84,7 +84,7 @@ function transform(root, file, YOLO) {
        *  - default: <div {{action [handler] ...rest }} /> ==> <div {{on "click" [handler]}}
        *  - defined: <div {{action [handler] ...rest on="[event]"}} /> ==> <div {{on "[event]" [handler] ...rest}}
        */
-      node.modifiers.forEach(mod => {
+      node.modifiers.forEach((mod, index, modifiers) => {
         if (mod.path && mod.path.original === 'action') {
           const hash = mod.hash;
           const params = mod.params;
@@ -101,7 +101,10 @@ function transform(root, file, YOLO) {
             `\nPlease verify the action '${params[0].original}' is expecting and handling the event appropriately.`
           );
           if (YOLO) {
-            mod = b.elementModifier(b.path('on'), [b.string(domEventName)].concat(...params));
+            modifiers[index] = b.elementModifier(
+              b.path('on'),
+              [b.string(domEventName)].concat(...params)
+            );
           }
         }
       });
