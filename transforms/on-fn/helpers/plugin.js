@@ -14,19 +14,22 @@ const domEvents = [
 /**
  * plugin entrypoint
  */
-function transform(root, file) {
+function transform(root, file, YOLO) {
   let b = recast.builders;
+  const loggerFunc = YOLO ? logger.warn : logger.info;
 
   function convertStringHandler(file, params) {
     if (params.length && params[0].type === 'StringLiteral' && params[0].value !== 'click') {
-      logger.warn(
+      loggerFunc(
         [
-          `TACO TACO Converting "${params[0].original}" to 'this.${params[0].original}'`,
+          `Converting "${params[0].original}" to 'this.${params[0].original}'`,
           `at ${JSON.stringify(params[0].loc.start)} of ${file.path}.`,
           `\nPlease verify 'this.${params[0].original}' exists in the backing javascript class.`,
         ].join('')
       );
-      params[0] = b.path(`this.${params[0].original}`);
+      if (YOLO) {
+        params[0] = b.path(`this.${params[0].original}`);
+      }
     }
   }
 
@@ -40,6 +43,7 @@ function transform(root, file) {
        *  - on[event]={{action [handler] ...rest}} ==> {{on "[event]" [handler] ...rest}}
        *  - on[event]={{action [handler] ...rest value=target.value}} ==> {{on "[event]" [handler] ..rest}}
        */
+      debugger;
       node.attributes.forEach((attr, index, attributes) => {
         if (attr.value && attr.value.path && attr.value.path.original === 'action') {
           const params = attr.value.params;
@@ -50,20 +54,27 @@ function transform(root, file) {
             logMessages.push(
               `Converting "${domEventName}" attribute to '{{on "${_eventName}" ...}}' modifier`
             );
-            node.modifiers.push(
-              b.elementModifier(b.path('on'), [b.string(domEventName.substr(2))].concat(...params))
-            );
-            // remove the attribute from the node
-            attributes.splice(index, 1);
+            if (YOLO) {
+              node.modifiers.push(
+                b.elementModifier(
+                  b.path('on'),
+                  [b.string(domEventName.substr(2))].concat(...params)
+                )
+              );
+              // remove the attribute from the node
+              attributes.splice(index, 1);
+            }
           } else {
             logMessages.push(
               `Converting "${attr.name}" attribute from '{{action ...' to '{{fn ...}}'`
             );
-            attr.value.path = b.path('fn');
+            if (YOLO) {
+              attr.value.path = b.path('fn');
+            }
           }
           logMessages.push(`at ${JSON.stringify(attr.loc.start)} of ${file.path}.`);
           logMessages.push(
-            `\nPlease verify the action 'this.${params[0].original}' is expecting and handling the event appropriately.`
+            `\nPlease verify the action '${params[0].original}' is expecting and handling the event appropriately.`
           );
         }
       });
@@ -87,15 +98,17 @@ function transform(root, file) {
           logMessages.push(`Converting modifier from '{{action ...' to '{{on ...}}'.`);
           logMessages.push(`at ${JSON.stringify(mod.loc.start)} of ${file.path}.`);
           logMessages.push(
-            `\nPlease verify the action 'this.${mod.original}' is expecting and handling the event appropriately.`
+            `\nPlease verify the action '${params[0].original}' is expecting and handling the event appropriately.`
           );
-          mod = b.elementModifier(b.path('on'), [b.string(domEventName)].concat(...params));
+          if (YOLO) {
+            mod = b.elementModifier(b.path('on'), [b.string(domEventName)].concat(...params));
+          }
         }
         return mod;
       });
 
       if (logMessages.length) {
-        logger.warn(logMessages.join(''));
+        loggerFunc(logMessages.join(''));
       }
     },
   });
