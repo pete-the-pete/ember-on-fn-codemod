@@ -84,7 +84,7 @@ function transform(root, file, YOLO) {
        *  - default: <div {{action [handler] ...rest }} /> ==> <div {{on "click" [handler]}}
        *  - defined: <div {{action [handler] ...rest on="[event]"}} /> ==> <div {{on "[event]" [handler] ...rest}}
        */
-      node.modifiers = node.modifiers.map(mod => {
+      node.modifiers.forEach(mod => {
         if (mod.path && mod.path.original === 'action') {
           const hash = mod.hash;
           const params = mod.params;
@@ -104,7 +104,6 @@ function transform(root, file, YOLO) {
             mod = b.elementModifier(b.path('on'), [b.string(domEventName)].concat(...params));
           }
         }
-        return mod;
       });
 
       if (logMessages.length) {
